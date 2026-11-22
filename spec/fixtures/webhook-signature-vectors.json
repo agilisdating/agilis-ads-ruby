@@ -1,0 +1,78 @@
+{
+    "description": "Signature test vectors for constructEvent. Verify with now = now_unix and tolerance 300 seconds unless a case says otherwise.",
+    "secret": "whsec_test_vector_secret_do_not_use",
+    "now_unix": 1795075230,
+    "tolerance_seconds": 300,
+    "body": "{\n    \"id\": \"whevt_01JD0S6Q4M8K1Z0X7C2V9B3N5R\",\n    \"object\": \"webhook_event\",\n    \"type\": \"event.published\",\n    \"created\": 1795075200,\n    \"livemode\": true,\n    \"version\": 1,\n    \"data\": {\n        \"object\": {\n            \"event_id\": 3104,\n            \"title\": \"Beginners Cuban Salsa: Friday Social\",\n            \"description\": \"Drop-in class for absolute beginners, followed by a social until late. No partner needed.\",\n            \"category\": {\n                \"category_id\": 9,\n                \"category_name\": \"Classes & workshops\"\n            },\n            \"venue_name\": \"Bar Salsa\",\n            \"address\": \"96 Charing Cross Road\",\n            \"city\": \"London\",\n            \"country_code\": \"GB\",\n            \"latitude\": 51.5133,\n            \"longitude\": -0.13,\n            \"starts_at\": \"2027-10-16T18:30:00Z\",\n            \"ends_at\": \"2027-10-16T23:00:00Z\",\n            \"url\": \"https://www.barsalsa.co.uk/classes/friday\",\n            \"advertised_name\": null,\n            \"price_min\": 12,\n            \"price_max\": 12,\n            \"currency\": \"GBP\",\n            \"image\": \"https://cdn.agilis.dating/92/events/5f0c…/event_orig.jpg\",\n            \"image_large\": \"https://cdn.agilis.dating/92/events/5f0c…/event_large.jpg\",\n            \"image_thumb\": \"https://cdn.agilis.dating/92/events/5f0c…/event_thumb.jpg\",\n            \"event_status\": \"Scheduled\",\n            \"attendees\": \"10-25\",\n            \"owner\": {\n                \"user_id\": 41,\n                \"name\": \"Tom Reid\"\n            },\n            \"environment\": \"LIVE\",\n            \"reschedule_count\": 0,\n            \"cloned_from_event_id\": null,\n            \"creation_datetime\": \"2027-09-20T10:00:00Z\",\n            \"last_edited_at\": null\n        },\n        \"amount_charged\": 10.0,\n        \"currency\": \"GBP\"\n    },\n    \"request\": {\n        \"source\": \"api\",\n        \"idempotency_key\": \"6f1c2a9e-0b7d-4c55-9a51-3d2f8e7b1c04\"\n    }\n}",
+    "cases": [
+        {
+            "name": "valid",
+            "header": "t=1795075200,v1=cefee31e82b31de3bd787199d1237b7fb8f71dfa4e6581bd886279b915cf4926",
+            "valid": true
+        },
+        {
+            "name": "valid_second_of_two_signatures",
+            "header": "t=1795075200,v1=a8f4430af2ee6413ff0443ac89f048a5ec956557eb54e93bbe94c6c340eede64,v1=cefee31e82b31de3bd787199d1237b7fb8f71dfa4e6581bd886279b915cf4926",
+            "valid": true
+        },
+        {
+            "name": "valid_with_spaces",
+            "header": "t=1795075200, v1=cefee31e82b31de3bd787199d1237b7fb8f71dfa4e6581bd886279b915cf4926",
+            "valid": true
+        },
+        {
+            "name": "wrong_secret",
+            "header": "t=1795075200,v1=a8f4430af2ee6413ff0443ac89f048a5ec956557eb54e93bbe94c6c340eede64",
+            "valid": false,
+            "error": "signature"
+        },
+        {
+            "name": "body_changed",
+            "header": "t=1795075200,v1=c792dffb34888e9502e72d36d2b254606a7d71faa43c481fe0d45a3226034926",
+            "valid": false,
+            "error": "signature"
+        },
+        {
+            "name": "too_old",
+            "header": "t=1795074800,v1=8c3c7c8a132e2e48e7a556d1f547377aa656f25a61b7c1d0249e5a106df6ca0d",
+            "valid": false,
+            "error": "timestamp"
+        },
+        {
+            "name": "too_far_in_future",
+            "header": "t=1795075600,v1=4581691ce326100f6ddedb78f20bdc8c7eb73a43bc218d633df1b117a49744aa",
+            "valid": false,
+            "error": "timestamp"
+        },
+        {
+            "name": "no_v1",
+            "header": "t=1795075200",
+            "valid": false,
+            "error": "header"
+        },
+        {
+            "name": "no_t",
+            "header": "v1=cefee31e82b31de3bd787199d1237b7fb8f71dfa4e6581bd886279b915cf4926",
+            "valid": false,
+            "error": "header"
+        },
+        {
+            "name": "not_a_number",
+            "header": "t=abc,v1=cefee31e82b31de3bd787199d1237b7fb8f71dfa4e6581bd886279b915cf4926",
+            "valid": false,
+            "error": "header"
+        },
+        {
+            "name": "empty",
+            "header": "",
+            "valid": false,
+            "error": "header"
+        },
+        {
+            "name": "v0_only",
+            "header": "t=1795075200,v0=cefee31e82b31de3bd787199d1237b7fb8f71dfa4e6581bd886279b915cf4926",
+            "valid": false,
+            "error": "header"
+        }
+    ]
+}
