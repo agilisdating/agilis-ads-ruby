@@ -19,7 +19,7 @@ module SpecHelpers
   # Stubs a request and returns an array that collects every matching request.
   def capture(method, path, response = json_response({ "return_code" => "S1" }))
     requests = []
-    stub_request(method, %r{\A#{Regexp.escape(BASE + path)}(\?.*)?\z}).with do |request|
+    stub_request(method, /\A#{Regexp.escape(BASE + path)}(\?.*)?\z/).with do |request|
       requests << request
       true
     end.to_return(response)

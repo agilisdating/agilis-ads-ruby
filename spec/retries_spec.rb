@@ -10,7 +10,7 @@ RSpec.describe "Retries" do
 
   def stub_sequence(method, path, *responses)
     requests = []
-    stub_request(method, %r{\A#{Regexp.escape(SpecHelpers::BASE + path)}(\?.*)?\z}).with do |request|
+    stub_request(method, /\A#{Regexp.escape(SpecHelpers::BASE + path)}(\?.*)?\z/).with do |request|
       requests << request
       true
     end.to_return(*responses)
