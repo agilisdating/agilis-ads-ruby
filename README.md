@@ -128,7 +128,7 @@ image: File.open("offer.png", "rb")
 image: AgilisAds::Upload.from_bytes(png_bytes, filename: "offer.png")
 ```
 
-The content type is detected from the file name. `events.edit` with a new image is sent as `POST` with `X-HTTP-Method-Override: PATCH`, as the API requires.
+The content type is detected from the file name. `events.edit` is always sent as a multipart `POST` with `X-HTTP-Method-Override: PATCH`, with or without a new image, as the API requires.
 
 `Time` values are sent as ISO 8601 in UTC (`2027-08-01T09:00:00Z`).
 

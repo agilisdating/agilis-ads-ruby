@@ -165,17 +165,24 @@ RSpec.describe "Operations" do
       expect(requests.size).to eq(1)
     end
 
-    it "edit without a file sends PATCH multipart" do
-      requests = capture(:patch, "/events/3104")
-      api.events.edit(3104, title: "New title")
-      expect(part_values(requests.first, "title")).to eq(["New title"])
-      expect(requests.first.headers).not_to have_key("X-Http-Method-Override")
+    it "edit without a file sends a multipart POST with X-HTTP-Method-Override: PATCH" do
+      posts = capture(:post, "/events/3104")
+      patches = capture(:patch, "/events/3104")
+      api.events.edit(3104, title: "New title", location: [51.5133, -0.13])
+      request = posts.first
+      expect(patches).to be_empty
+      expect(request.method).to eq(:post)
+      expect(request.headers["X-Http-Method-Override"]).to eq("PATCH")
+      expect(request.headers["Content-Type"]).to start_with("multipart/form-data; boundary=")
+      expect(part_values(request, "title")).to eq(["New title"])
+      expect(part_values(request, "location[]")).to eq(%w[51.5133 -0.13])
     end
 
     it "edit with a file sends POST with X-HTTP-Method-Override: PATCH" do
       requests = capture(:post, "/events/3104")
       api.events.edit(3104, image: image_path, crop: { x: 1, y: 2, w: 1280 })
       request = requests.first
+      expect(request.method).to eq(:post)
       expect(request.headers["X-Http-Method-Override"]).to eq("PATCH")
       expect(multipart_parts(request).map { |part| part[:name] }).to eq(["image", "crop[x]", "crop[y]", "crop[w]"])
       expect(part_values(request, "environment")).to be_empty
