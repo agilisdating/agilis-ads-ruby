@@ -60,11 +60,5 @@ module AgilisAds
     def escape(text)
       text.to_s.gsub(/["\r\n\\]/) { |char| format("%%%02X", char.ord) }
     end
-
-    def contains_upload?(params)
-      params.any? do |name, value|
-        Upload.upload?(value) || (name.to_s == "image" && value.is_a?(String))
-      end
-    end
   end
 end

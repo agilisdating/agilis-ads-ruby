@@ -97,7 +97,6 @@ module AgilisAds
 
   module Multipart
     def self.encode: (Hash[String, untyped] params, ?boundary: String) -> [String, String]
-    def self.contains_upload?: (Hash[String, untyped] params) -> bool
   end
 
   class NetHttpClient

@@ -28,16 +28,12 @@ module AgilisAds
         call_api("GET", "/events/#{path_segment(event_id)}")
       end
 
-      # PATCH /events/{event_id} (multipart). With a new image it is sent as a
-      # POST with `X-HTTP-Method-Override: PATCH`.
+      # PATCH /events/{event_id} (multipart). Always sent as a POST with
+      # `X-HTTP-Method-Override: PATCH`, with or without a new image, because
+      # multipart bodies are only read on POST.
       def edit(event_id, params = nil, **fields)
-        body = merge_params(params, fields)
-        path = "/events/#{path_segment(event_id)}"
-        if Multipart.contains_upload?(body)
-          call_api("POST", path, multipart: body, headers: { "X-HTTP-Method-Override" => "PATCH" })
-        else
-          call_api("PATCH", path, multipart: body)
-        end
+        call_api("POST", "/events/#{path_segment(event_id)}",
+                 multipart: merge_params(params, fields), headers: { "X-HTTP-Method-Override" => "PATCH" })
       end
 
       # DELETE /events/{event_id}
