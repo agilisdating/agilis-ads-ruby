@@ -1,0 +1,206 @@
+module AgilisAds
+  VERSION: String
+
+  type params = Hash[String | Symbol, untyped]
+
+  class AgilisError < StandardError
+    attr_reader http_status: Integer?
+    attr_reader return_code: String?
+    attr_reader body: untyped
+    attr_reader headers: Hash[String, String]
+    def initialize: (?String? message, ?http_status: Integer?, ?return_code: String?, ?body: untyped, ?headers: Hash[String, String]?) -> void
+  end
+
+  class AuthenticationError < AgilisError
+  end
+
+  class PermissionError < AgilisError
+  end
+
+  class NotFoundError < AgilisError
+  end
+
+  class ConflictError < AgilisError
+  end
+
+  class InvalidRequestError < AgilisError
+  end
+
+  class RateLimitError < AgilisError
+    attr_reader retry_after: Float?
+    def initialize: (?String? message, ?retry_after: Float?, **untyped) -> void
+  end
+
+  class ApiError < AgilisError
+  end
+
+  class ConnectionError < AgilisError
+  end
+
+  class SignatureVerificationError < AgilisError
+    attr_reader reason: (:header | :timestamp | :signature | :payload)?
+    def initialize: (?String? message, ?reason: Symbol?) -> void
+  end
+
+  class Response
+    attr_reader status: Integer
+    attr_reader headers: Hash[String, String]
+    attr_reader body: String
+    def initialize: (Integer status, Hash[untyped, untyped]? headers, String? body) -> void
+    def header: (String | Symbol name) -> String?
+    def rate_limit_limit: () -> Integer?
+    def rate_limit_remaining: () -> Integer?
+  end
+
+  class AgilisObject
+    attr_reader last_response: Response?
+    def initialize: (?Hash[untyped, untyped]? values, ?Response? last_response) -> void
+    def []: (String | Symbol key) -> untyped
+    def key?: (String | Symbol key) -> bool
+    def keys: () -> Array[Symbol]
+    def dig: (String | Symbol key, *untyped rest) -> untyped
+    def each: () { (Symbol, untyped) -> void } -> self
+            | () -> Enumerator[[Symbol, untyped], self]
+    def to_h: () -> Hash[Symbol, untyped]
+    def to_json: (*untyped) -> String
+    def method_missing: (Symbol name, *untyped args) -> untyped
+    def self.convert: (untyped value) -> untyped
+    def self.deep_symbolize: (untyped value) -> untyped
+  end
+
+  class Page < AgilisObject
+    def initialize: (Hash[untyped, untyped]? values, ?Response? last_response, ?fetch_next: (^(String) -> Page)?) -> void
+    def data: () -> Array[AgilisObject]
+    def pagination: () -> AgilisObject?
+    def more?: () -> bool
+    def next_cursor: () -> String?
+    def next_page: () -> Page?
+    def to_a: () -> Array[AgilisObject]
+    def auto_paging_each: () { (AgilisObject) -> void } -> self
+                        | () -> Enumerator[AgilisObject, self]
+  end
+
+  class Upload
+    CONTENT_TYPES: Hash[String, String]
+    DEFAULT_CONTENT_TYPE: String
+    attr_reader filename: String
+    attr_reader content_type: String
+    def self.from_path: (String | Pathname path, ?filename: String?, ?content_type: String?) -> Upload
+    def self.from_bytes: (String bytes, filename: String, ?content_type: String?) -> Upload
+    def self.from_io: (untyped io, ?filename: String?, ?content_type: String?) -> Upload
+    def self.coerce: (untyped value) -> Upload
+    def self.upload?: (untyped value) -> bool
+    def self.content_type_for: (String filename) -> String
+    def initialize: (^() -> String reader, filename: String, ?content_type: String?) -> void
+    def read: () -> String
+  end
+
+  module Multipart
+    def self.encode: (Hash[String, untyped] params, ?boundary: String) -> [String, String]
+    def self.contains_upload?: (Hash[String, untyped] params) -> bool
+  end
+
+  class NetHttpClient
+    def call: (method: String, url: String, headers: Hash[String, String], body: String?, timeout: Numeric) -> [Integer, Hash[String, String], String]
+  end
+
+  module Webhook
+    DEFAULT_TOLERANCE: Integer
+    SIGNATURE_HEADER: String
+    def self.construct_event: (String raw_body, String? signature_header, String secret, ?Integer tolerance, ?now: (Integer | Time)?) -> AgilisObject
+  end
+
+  class Client
+    DEFAULT_BASE_URL: String
+    DEFAULT_TIMEOUT: Integer
+    DEFAULT_MAX_RETRIES: Integer
+
+    attr_reader base_url: String
+    attr_reader timeout: Numeric
+    attr_reader max_retries: Integer
+    attr_reader mode: ("test" | "live")?
+    attr_reader categories: Resources::Categories
+    attr_reader interests: Resources::Interests
+    attr_reader offers: Resources::Offers
+    attr_reader event_categories: Resources::EventCategories
+    attr_reader event_currencies: Resources::EventCurrencies
+    attr_reader event_config: Resources::EventConfig
+    attr_reader events: Resources::Events
+    attr_reader webhook_endpoints: Resources::WebhookEndpoints
+    attr_reader webhook_events: Resources::WebhookEvents
+    attr_reader webhooks: Resources::Webhooks
+
+    def initialize: (?api_key: String?, ?base_url: String, ?timeout: Numeric, ?max_retries: Integer, ?http_client: untyped) -> void
+    def self.mode_for: (String api_key) -> ("test" | "live")?
+    def test_mode?: () -> bool
+    def live_mode?: () -> bool
+  end
+
+  module Resources
+    class Base
+      def initialize: (Client client) -> void
+    end
+
+    class Categories < Base
+      def list: () -> AgilisObject
+    end
+
+    class Interests < Base
+      def list: () -> AgilisObject
+    end
+
+    class EventCategories < Base
+      def list: () -> AgilisObject
+    end
+
+    class EventCurrencies < Base
+      def list: () -> AgilisObject
+    end
+
+    class EventConfig < Base
+      def get: () -> AgilisObject
+    end
+
+    class Offers < Base
+      def estimate_price: (?params? params, **untyped) -> AgilisObject
+      def create: (?params? params, ?dry_run: bool, ?idempotency_key: String?, **untyped) -> AgilisObject
+      def list: (?params? params, **untyped) -> Page
+      def pause: (Integer | String offer_id) -> AgilisObject
+      def resume: (Integer | String offer_id) -> AgilisObject
+      def analytics: (Integer | String offer_id, ?params? params, **untyped) -> AgilisObject
+      def delete: (Integer | String offer_id, ?dry_run: bool) -> AgilisObject
+    end
+
+    class Events < Base
+      def preview: (?params? params, **untyped) -> AgilisObject
+      def publish: (?params? params, ?dry_run: bool, ?idempotency_key: String?, **untyped) -> AgilisObject
+      def list: (?params? params, **untyped) -> Page
+      def get: (Integer | String event_id) -> AgilisObject
+      def edit: (Integer | String event_id, ?params? params, **untyped) -> AgilisObject
+      def delete: (Integer | String event_id, ?dry_run: bool) -> AgilisObject
+      def reschedule: (Integer | String event_id, ?params? params, **untyped) -> AgilisObject
+      def cancel: (Integer | String event_id, ?dry_run: bool) -> AgilisObject
+      def analytics: (Integer | String event_id, ?params? params, **untyped) -> AgilisObject
+    end
+
+    class WebhookEndpoints < Base
+      def list: () -> AgilisObject
+      def create: (?params? params, **untyped) -> AgilisObject
+      def get: (String endpoint_id) -> AgilisObject
+      def update: (String endpoint_id, ?params? params, **untyped) -> AgilisObject
+      def delete: (String endpoint_id) -> AgilisObject
+      def roll_secret: (String endpoint_id, ?params? params, **untyped) -> AgilisObject
+      def send_test: (String endpoint_id, ?params? params, **untyped) -> AgilisObject
+    end
+
+    class WebhookEvents < Base
+      def list: (?params? params, **untyped) -> Page
+      def get: (String webhook_event_id) -> AgilisObject
+      def resend: (String webhook_event_id, ?params? params, **untyped) -> AgilisObject
+    end
+
+    class Webhooks < Base
+      def construct_event: (String raw_body, String? signature_header, String secret, ?Integer tolerance, ?now: (Integer | Time)?) -> AgilisObject
+    end
+  end
+end
