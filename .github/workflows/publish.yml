@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: rubygems
     permissions:
-      contents: write
+      contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -29,4 +29,29 @@ jobs:
           fi
       - name: Tests
         run: bundle exec rspec
-      - uses: rubygems/release-gem@v1
+      # Trusted publishing. The first push of a new gem must also name the RubyGems.org account
+      # that will own it (RUBYGEMS_OWNER_ID); later pushes leave it out.
+      - name: Exchange the GitHub OIDC token for a short-lived RubyGems key
+        env:
+          RUBYGEMS_OWNER_ID: "256321"
+        run: |
+          set -euo pipefail
+          jwt=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN"             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=rubygems.org" | jq -r .value)
+          if curl -sf -o /dev/null https://rubygems.org/api/v1/gems/agilis-ads.json; then
+            body=$(jq -n --arg jwt "$jwt" '{jwt: $jwt}')
+          else
+            body=$(jq -n --arg jwt "$jwt" --arg owner "$RUBYGEMS_OWNER_ID" '{jwt: $jwt, owner: $owner}')
+          fi
+          response=$(curl -sS -X POST -H "Content-Type: application/json" -H "Accept: application/json"             --data "$body" https://rubygems.org/api/v1/oidc/trusted_publisher/exchange_token)
+          key=$(echo "$response" | jq -r '.rubygems_api_key // empty')
+          if [ -z "$key" ]; then
+            echo "::error::RubyGems refused the token exchange: $(echo "$response" | jq -c 'del(.rubygems_api_key)' 2>/dev/null || echo "$response")"
+            exit 1
+          fi
+          echo "::add-mask::$key"
+          echo "GEM_HOST_API_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Build and push the gem
+        run: |
+          gem build agilis-ads.gemspec
+          gem push "agilis-ads-$(ruby -Ilib -e 'require "agilis_ads/version"; print AgilisAds::VERSION').gem"
